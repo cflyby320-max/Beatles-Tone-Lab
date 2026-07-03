@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "beatles-tone-lab",
+  "compatibility_date": "2026-07-03",
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

@@ -24,7 +24,6 @@ export function initPresetGrid(container, options) {
   } = options;
 
   let eraFilter = initialEra || null;
-  let playStarting = false;
 
   function listenLabel(preset) {
     const state = listenMode.getState();
@@ -112,24 +111,32 @@ export function initPresetGrid(container, options) {
     playBtn.dataset.control = 'play';
     const syncPlayLabel = () => {
       const active = playMode.isActive();
-      playBtn.textContent = playStarting ? '… Starting' : active ? '❚❚ Stop' : '🎸 Play';
+      const starting = playMode.isStarting();
+      playBtn.textContent = starting ? '… Starting' : active ? '❚❚ Stop' : '🎸 Play';
       playBtn.classList.toggle('playing', active);
       playBtn.setAttribute('aria-pressed', String(active));
-      playBtn.setAttribute('aria-busy', String(playStarting));
-      playBtn.setAttribute('aria-disabled', String(playStarting));
+      playBtn.setAttribute('aria-busy', String(starting));
+      playBtn.setAttribute('aria-disabled', String(starting));
     };
     syncPlayLabel();
     playBtn.addEventListener('click', async () => {
-      if (playStarting) return;
+      if (playMode.isStarting()) return;
       if (playMode.isActive()) {
         playMode.stop();
         syncPlayLabel();
         return;
       }
-      playStarting = true;
+      // Kick off the mic request before stopping Listen: start() flips
+      // isStarting() synchronously, so the re-render that listenMode.stop()
+      // triggers already shows the '… Starting' state.
+      const startPromise = playMode.start(getSelectedDeviceId ? getSelectedDeviceId() : undefined);
       listenMode.stop();
       try {
-        await playMode.start(getSelectedDeviceId ? getSelectedDeviceId() : undefined);
+        const started = await startPromise;
+        // null means a newer request (e.g. Listen) cancelled this one while
+        // the permission prompt was pending — expected control flow, not an
+        // error, and Play Mode has already stopped the late stream's tracks.
+        if (started === null) return;
         if (context.state === 'suspended') await context.resume();
       } catch (e) {
         // getUserMedia may already have connected a stream before a later
@@ -137,7 +144,6 @@ export function initPresetGrid(container, options) {
         playMode.stop();
         if (onError) onError(friendlyPlayModeError(e));
       } finally {
-        playStarting = false;
         render();
       }
     });

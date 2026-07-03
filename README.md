@@ -91,4 +91,7 @@ anywhere in this project.**
 ## Hosting
 
 Production target is [Cloudflare Pages](https://pages.cloudflare.com/) (free, static,
-HTTPS — required for `getUserMedia`). See `docs/decisions/0002-hosting-cloudflare-pages.md`.
+HTTPS — required for `getUserMedia`). It's a no-build static site served from the repo
+root. See `docs/decisions/0002-hosting-cloudflare-pages.md` for the decision and
+`docs/deploy-cloudflare-pages.md` for the step-by-step owner connect runbook. Response
+headers are set in `_headers`; the measured payload budget is in `docs/asset-budget.md`.

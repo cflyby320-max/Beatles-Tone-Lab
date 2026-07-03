@@ -1,0 +1,15 @@
+# Cloudflare Pages response headers (https://developers.cloudflare.com/pages/configuration/headers/).
+# Conservative defaults for a no-build static site served from the repo root.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Bundled audio/IR assets. Filenames are NOT content-hashed (no build step), so we use a
+# moderate max-age rather than `immutable` — an asset swap must not be pinned behind a
+# year-long cache. Bump this once assets are fingerprinted.
+/public/*
+  Cache-Control: public, max-age=3600
+
+/css/*
+  Cache-Control: public, max-age=3600

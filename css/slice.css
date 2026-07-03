@@ -456,6 +456,11 @@ body {
   cursor: default;
 }
 
+.play-toggle[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .play-toggle.playing {
   background: color-mix(in srgb, var(--accent) 65%, #000);
 }

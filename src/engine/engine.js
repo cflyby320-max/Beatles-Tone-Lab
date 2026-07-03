@@ -33,6 +33,9 @@ export class Engine {
       emitter: this.emitter,
     });
     this.input = this.chain.input;
+    // Listen Mode uses a known dry DI recording, so it bypasses the
+    // interface-calibration inputGain and enters at NoiseGate (PRD §4).
+    this.listenInput = this.chain.nodes.gate.input;
     this.output = this.chain.output;
     this.output.connect(context.destination);
 

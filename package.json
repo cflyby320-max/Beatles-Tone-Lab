@@ -8,7 +8,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "test": "node src/presets/validate.js && node src/engine/checks/no-scriptprocessor.check.js && node src/engine/checks/no-dom-in-engine.check.js",
+    "test": "node src/presets/validate.js && node src/engine/checks/no-scriptprocessor.check.js && node src/engine/checks/no-dom-in-engine.check.js && node test/listen-mode.test.mjs",
     "start": "node server.js"
   },
   "repository": {

@@ -24,6 +24,8 @@ export function initPresetGrid(container, options) {
   } = options;
 
   let eraFilter = initialEra || null;
+  let playStarting = false;
+
   function listenLabel(preset) {
     const state = listenMode.getState();
     if (state.presetId !== preset.id) return '▶ Listen';
@@ -32,6 +34,22 @@ export function initPresetGrid(container, options) {
     if (state.status === 'paused') return '▶ Resume';
     if (state.status === 'error') return '↻ Retry';
     return '▶ Listen';
+  }
+
+  function captureFocus() {
+    const active = document.activeElement;
+    if (!active || !container.contains(active) || !active.dataset.control) return null;
+    const tile = active.closest('.preset-tile');
+    return tile ? { presetId: tile.dataset.presetId, control: active.dataset.control } : null;
+  }
+
+  function restoreFocus(focus) {
+    if (!focus) return;
+    const tile = Array.from(container.querySelectorAll('.preset-tile')).find(
+      (candidate) => candidate.dataset.presetId === focus.presetId
+    );
+    const control = tile && tile.querySelector('[data-control="' + focus.control + '"]');
+    if (control) control.focus();
   }
 
   function friendlyPlayModeError(e) {
@@ -50,6 +68,7 @@ export function initPresetGrid(container, options) {
     const listenBtn = document.createElement('button');
     listenBtn.type = 'button';
     listenBtn.className = 'play-toggle';
+    listenBtn.dataset.control = 'listen';
     const listenState = listenMode.getState();
     listenBtn.textContent = listenLabel(preset);
     listenBtn.classList.toggle(
@@ -64,10 +83,13 @@ export function initPresetGrid(container, options) {
       'aria-busy',
       String(listenState.presetId === preset.id && listenState.status === 'loading')
     );
-    listenBtn.disabled =
-      listenState.presetId === preset.id && listenState.status === 'loading';
+    listenBtn.setAttribute(
+      'aria-disabled',
+      String(listenState.presetId === preset.id && listenState.status === 'loading')
+    );
     listenBtn.addEventListener('click', async () => {
       const current = listenMode.getState();
+      if (current.presetId === preset.id && current.status === 'loading') return;
       if (current.presetId === preset.id && current.status === 'playing') {
         listenMode.pause();
       } else {
@@ -87,28 +109,35 @@ export function initPresetGrid(container, options) {
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
     playBtn.className = 'play-toggle play-toggle-live';
+    playBtn.dataset.control = 'play';
     const syncPlayLabel = () => {
       const active = playMode.isActive();
-      playBtn.textContent = active ? '❚❚ Stop' : '🎸 Play';
+      playBtn.textContent = playStarting ? '… Starting' : active ? '❚❚ Stop' : '🎸 Play';
       playBtn.classList.toggle('playing', active);
       playBtn.setAttribute('aria-pressed', String(active));
+      playBtn.setAttribute('aria-busy', String(playStarting));
+      playBtn.setAttribute('aria-disabled', String(playStarting));
     };
     syncPlayLabel();
     playBtn.addEventListener('click', async () => {
+      if (playStarting) return;
       if (playMode.isActive()) {
         playMode.stop();
         syncPlayLabel();
         return;
       }
-      playBtn.disabled = true;
+      playStarting = true;
       listenMode.stop();
       try {
         await playMode.start(getSelectedDeviceId ? getSelectedDeviceId() : undefined);
         if (context.state === 'suspended') await context.resume();
       } catch (e) {
+        // getUserMedia may already have connected a stream before a later
+        // AudioContext resume failure. Always tear it down on any failure.
+        playMode.stop();
         if (onError) onError(friendlyPlayModeError(e));
       } finally {
-        playBtn.disabled = false;
+        playStarting = false;
         render();
       }
     });
@@ -120,9 +149,13 @@ export function initPresetGrid(container, options) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'play-toggle play-toggle-select';
+    btn.dataset.control = 'listen';
     const state = listenMode.getState();
     btn.textContent = listenLabel(preset);
-    btn.disabled = state.presetId === preset.id && state.status === 'loading';
+    btn.setAttribute(
+      'aria-disabled',
+      String(state.presetId === preset.id && state.status === 'loading')
+    );
     btn.setAttribute(
       'aria-pressed',
       String(state.presetId === preset.id && state.status === 'playing')
@@ -132,12 +165,15 @@ export function initPresetGrid(container, options) {
       String(state.presetId === preset.id && state.status === 'loading')
     );
     btn.addEventListener('click', async () => {
+      const current = listenMode.getState();
+      if (current.presetId === preset.id && current.status === 'loading') return;
       await listenMode.start(preset);
     });
     el.appendChild(btn);
   }
 
   function render() {
+    const focus = captureFocus();
     const activeId = getActivePresetId();
     container.innerHTML = '';
     presets
@@ -147,6 +183,7 @@ export function initPresetGrid(container, options) {
 
         const tile = document.createElement('article');
         tile.className = 'preset-tile' + (isActive ? ' active' : '');
+        tile.dataset.presetId = preset.id;
         tile.setAttribute('aria-current', isActive ? 'true' : 'false');
 
         const cardBody = document.createElement('div');
@@ -172,6 +209,7 @@ export function initPresetGrid(container, options) {
 
         container.appendChild(tile);
       });
+    restoreFocus(focus);
   }
 
   render();

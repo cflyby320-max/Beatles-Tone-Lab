@@ -12,6 +12,7 @@ import { initPresetGrid } from './ui/presetGrid.js';
 import { initStatusBar } from './ui/statusBar.js';
 import { createPlayMode, isMobile } from './ui/playMode.js';
 import { createListenMode } from './ui/listenMode.js';
+import { loadSample } from './engine/utils/loadSample.js';
 
 const PRESET_FILES = [
   'i-saw-her-standing-there-1963.json',
@@ -93,7 +94,8 @@ async function boot() {
   }
 
   let grid;
-  const listenMode = createListenMode(context, engine.input, {
+  const listenMode = createListenMode(context, engine.listenInput, {
+    loadBuffer: loadSample,
     preparePreset: activatePreset,
     stopPlayMode: () => playMode.stop(),
     onStateChange: (state) => {

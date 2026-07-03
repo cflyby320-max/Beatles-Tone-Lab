@@ -7,7 +7,6 @@
 // §5.2) the moment it's pressed.
 import { renderPresetCard } from './presetCard.js';
 import { initKnobs, renderStaticKnobs } from './knobs.js';
-import { isMobile } from './playMode.js';
 
 export function initPresetGrid(container, options) {
   const {
@@ -15,68 +14,41 @@ export function initPresetGrid(container, options) {
     engine,
     context,
     playMode,
+    listenMode,
+    mobile,
     getSelectedDeviceId,
-    activate, // (preset) => Promise, resolves once engine + tweak persistence reflect `preset`
     getActivePresetId, // () => string
     getResetToOriginal, // () => function
     onError,
     initialEra,
   } = options;
 
-  const audio = document.createElement('audio');
-  audio.loop = true;
-  audio.crossOrigin = 'anonymous';
-  audio.preload = 'auto';
-  audio.style.display = 'none';
-  audio.addEventListener('error', () => {
-    if (onError) onError('Demo riff failed to load: ' + (audio.dataset.riff || audio.src));
-  });
-  document.body.appendChild(audio);
-  const audioSource = context.createMediaElementSource(audio);
-  audioSource.connect(engine.input);
-
   let eraFilter = initialEra || null;
-  const listenState = { playing: false, presetId: null };
-  const playState = { active: false };
 
-  function loadRiff(preset) {
-    if (audio.dataset.riff === preset.demoRiff) return;
-    audio.innerHTML = '';
-    const mp3 = document.createElement('source');
-    mp3.src = preset.demoRiff;
-    mp3.type = 'audio/mpeg';
-    const ogg = document.createElement('source');
-    ogg.src = preset.demoRiff.replace(/\.mp3$/, '.ogg');
-    ogg.type = 'audio/ogg';
-    audio.appendChild(mp3);
-    audio.appendChild(ogg);
-    audio.dataset.riff = preset.demoRiff;
-    audio.load();
+  function listenLabel(preset) {
+    const state = listenMode.getState();
+    if (state.presetId !== preset.id) return '▶ Listen';
+    if (state.status === 'loading') return '… Loading';
+    if (state.status === 'playing') return '❚❚ Pause';
+    if (state.status === 'paused') return '▶ Resume';
+    if (state.status === 'error') return '↻ Retry';
+    return '▶ Listen';
   }
 
-  // Must be called synchronously within a user-gesture handler, before any
-  // `await`, so the eventual audio.play() call stays inside the gesture
-  // (Safari autoplay policy). Everything here up to the play() call is sync.
-  async function startListen(preset) {
-    if (playMode.isActive()) {
-      playMode.stop();
-      playState.active = false;
-    }
-    loadRiff(preset);
-    if (context.state === 'suspended') context.resume().catch(() => {});
-    listenState.presetId = preset.id;
-    try {
-      await audio.play();
-      listenState.playing = true;
-    } catch (e) {
-      listenState.playing = false;
-      if (onError) onError('Playback blocked: ' + e.message);
-    }
+  function captureFocus() {
+    const active = document.activeElement;
+    if (!active || !container.contains(active) || !active.dataset.control) return null;
+    const tile = active.closest('.preset-tile');
+    return tile ? { presetId: tile.dataset.presetId, control: active.dataset.control } : null;
   }
 
-  function pauseListen() {
-    audio.pause();
-    listenState.playing = false;
+  function restoreFocus(focus) {
+    if (!focus) return;
+    const tile = Array.from(container.querySelectorAll('.preset-tile')).find(
+      (candidate) => candidate.dataset.presetId === focus.presetId
+    );
+    const control = tile && tile.querySelector('[data-control="' + focus.control + '"]');
+    if (control) control.focus();
   }
 
   function friendlyPlayModeError(e) {
@@ -95,24 +67,37 @@ export function initPresetGrid(container, options) {
     const listenBtn = document.createElement('button');
     listenBtn.type = 'button';
     listenBtn.className = 'play-toggle';
-    const syncListenLabel = () => {
-      const on = listenState.playing && listenState.presetId === preset.id;
-      listenBtn.textContent = on ? '❚❚ Pause' : '▶ Listen';
-      listenBtn.classList.toggle('playing', on);
-    };
-    syncListenLabel();
+    listenBtn.dataset.control = 'listen';
+    const listenState = listenMode.getState();
+    listenBtn.textContent = listenLabel(preset);
+    listenBtn.classList.toggle(
+      'playing',
+      listenState.presetId === preset.id && listenState.status === 'playing'
+    );
+    listenBtn.setAttribute(
+      'aria-pressed',
+      String(listenState.presetId === preset.id && listenState.status === 'playing')
+    );
+    listenBtn.setAttribute(
+      'aria-busy',
+      String(listenState.presetId === preset.id && listenState.status === 'loading')
+    );
+    listenBtn.setAttribute(
+      'aria-disabled',
+      String(listenState.presetId === preset.id && listenState.status === 'loading')
+    );
     listenBtn.addEventListener('click', async () => {
-      const on = listenState.playing && listenState.presetId === preset.id;
-      if (on) {
-        pauseListen();
+      const current = listenMode.getState();
+      if (current.presetId === preset.id && current.status === 'loading') return;
+      if (current.presetId === preset.id && current.status === 'playing') {
+        listenMode.pause();
       } else {
-        await startListen(preset);
+        await listenMode.start(preset);
       }
-      syncListenLabel();
     });
     el.appendChild(listenBtn);
 
-    if (isMobile()) {
+    if (mobile) {
       const hint = document.createElement('p');
       hint.className = 'mobile-hint';
       hint.textContent = 'Play Mode needs desktop Chrome + an audio interface.';
@@ -123,32 +108,43 @@ export function initPresetGrid(container, options) {
     const playBtn = document.createElement('button');
     playBtn.type = 'button';
     playBtn.className = 'play-toggle play-toggle-live';
+    playBtn.dataset.control = 'play';
     const syncPlayLabel = () => {
-      playBtn.textContent = playState.active ? '❚❚ Stop' : '🎸 Play';
-      playBtn.classList.toggle('playing', playState.active);
+      const active = playMode.isActive();
+      const starting = playMode.isStarting();
+      playBtn.textContent = starting ? '… Starting' : active ? '❚❚ Stop' : '🎸 Play';
+      playBtn.classList.toggle('playing', active);
+      playBtn.setAttribute('aria-pressed', String(active));
+      playBtn.setAttribute('aria-busy', String(starting));
+      playBtn.setAttribute('aria-disabled', String(starting));
     };
     syncPlayLabel();
     playBtn.addEventListener('click', async () => {
-      if (playState.active) {
+      if (playMode.isStarting()) return;
+      if (playMode.isActive()) {
         playMode.stop();
-        playState.active = false;
         syncPlayLabel();
         return;
       }
-      playBtn.disabled = true;
-      if (listenState.playing) {
-        pauseListen();
-        syncListenLabel();
-      }
+      // Kick off the mic request before stopping Listen: start() flips
+      // isStarting() synchronously, so the re-render that listenMode.stop()
+      // triggers already shows the '… Starting' state.
+      const startPromise = playMode.start(getSelectedDeviceId ? getSelectedDeviceId() : undefined);
+      listenMode.stop();
       try {
-        await playMode.start(getSelectedDeviceId ? getSelectedDeviceId() : undefined);
+        const started = await startPromise;
+        // null means a newer request (e.g. Listen) cancelled this one while
+        // the permission prompt was pending — expected control flow, not an
+        // error, and Play Mode has already stopped the late stream's tracks.
+        if (started === null) return;
         if (context.state === 'suspended') await context.resume();
-        playState.active = true;
       } catch (e) {
+        // getUserMedia may already have connected a stream before a later
+        // AudioContext resume failure. Always tear it down on any failure.
+        playMode.stop();
         if (onError) onError(friendlyPlayModeError(e));
       } finally {
-        playBtn.disabled = false;
-        syncPlayLabel();
+        render();
       }
     });
     el.appendChild(playBtn);
@@ -159,20 +155,31 @@ export function initPresetGrid(container, options) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'play-toggle play-toggle-select';
-    btn.textContent = '▶ Listen';
+    btn.dataset.control = 'listen';
+    const state = listenMode.getState();
+    btn.textContent = listenLabel(preset);
+    btn.setAttribute(
+      'aria-disabled',
+      String(state.presetId === preset.id && state.status === 'loading')
+    );
+    btn.setAttribute(
+      'aria-pressed',
+      String(state.presetId === preset.id && state.status === 'playing')
+    );
+    btn.setAttribute(
+      'aria-busy',
+      String(state.presetId === preset.id && state.status === 'loading')
+    );
     btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      await startListen(preset);
-      try {
-        await activate(preset);
-      } finally {
-        render();
-      }
+      const current = listenMode.getState();
+      if (current.presetId === preset.id && current.status === 'loading') return;
+      await listenMode.start(preset);
     });
     el.appendChild(btn);
   }
 
   function render() {
+    const focus = captureFocus();
     const activeId = getActivePresetId();
     container.innerHTML = '';
     presets
@@ -182,6 +189,7 @@ export function initPresetGrid(container, options) {
 
         const tile = document.createElement('article');
         tile.className = 'preset-tile' + (isActive ? ' active' : '');
+        tile.dataset.presetId = preset.id;
         tile.setAttribute('aria-current', isActive ? 'true' : 'false');
 
         const cardBody = document.createElement('div');
@@ -207,6 +215,7 @@ export function initPresetGrid(container, options) {
 
         container.appendChild(tile);
       });
+    restoreFocus(focus);
   }
 
   render();

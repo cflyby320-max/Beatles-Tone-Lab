@@ -456,6 +456,11 @@ body {
   cursor: default;
 }
 
+.play-toggle[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .play-toggle.playing {
   background: color-mix(in srgb, var(--accent) 65%, #000);
 }
@@ -507,6 +512,10 @@ body {
   gap: 0.45rem;
 }
 
+.status-device-field[hidden] {
+  display: none;
+}
+
 .status-label {
   font-size: 0.68rem;
   text-transform: uppercase;
@@ -553,4 +562,13 @@ body {
   color: var(--error);
   font-weight: 600;
   flex-basis: 100%;
+}
+
+/* Mobile is Listen-only. CSS is a defensive backstop while JS also avoids
+   enumerating input devices in compact/coarse-pointer environments. */
+@media (max-width: 700px), (hover: none) and (pointer: coarse) {
+  .play-toggle-live,
+  .status-device-field {
+    display: none;
+  }
 }

@@ -1,6 +1,7 @@
 // Status bar (PRD §5.1): input device selector, input level meter, measured
 // latency, master volume, and an error surface for IR/riff/Play-Mode failures.
 import { measuredLatencyMs } from '../engine/context.js';
+import { clamp } from '../engine/utils/clamp.js';
 
 export function initStatusBar(container, engine, context, extras) {
   const { playMode, monitorGain, analyser } = extras || {};
@@ -17,7 +18,7 @@ export function initStatusBar(container, engine, context, extras) {
     '</div>' +
     '<label class="status-field" for="stat-volume">' +
     '<span class="status-label">Volume</span>' +
-    '<input id="stat-volume" type="range" min="0" max="1.5" step="0.01" />' +
+    '<input id="stat-volume" type="range" min="0" max="1" step="0.01" />' +
     '</label>' +
     '</div>' +
     '<div class="status-row status-row-meta">' +
@@ -102,11 +103,15 @@ export function initStatusBar(container, engine, context, extras) {
 
   // --- master volume: a downstream listening-convenience trim, separate
   // from any preset's own "Master" tone knob — never touches preset/engine
-  // state, so it can't affect determinism or persisted tweaks.
+  // state, so it can't affect determinism or persisted tweaks. Hard-capped
+  // at unity (never boosts): it sits after the engine's own hard-capped
+  // master gain, so anything above 1 here would let the final output exceed
+  // the safety ceiling the engine already promises (AGENTS.md §2). Clamp
+  // defensively on both read and write, not just via the slider's max.
   if (monitorGain) {
-    volumeSlider.value = String(monitorGain.gain.value);
+    volumeSlider.value = String(clamp(monitorGain.gain.value, 0, 1));
     volumeSlider.addEventListener('input', () => {
-      monitorGain.gain.value = parseFloat(volumeSlider.value);
+      monitorGain.gain.value = clamp(parseFloat(volumeSlider.value), 0, 1);
     });
   } else {
     volumeSlider.disabled = true;

@@ -1,14 +1,14 @@
 {
-  "name": "GuitarAmpSimulator",
-  "version": "1.0.0",
-  "description": "A guitar amp sim using Web Audio API",
+  "name": "beatles-tone-lab",
+  "version": "0.1.0",
+  "description": "Beatles Tone Lab — a browser guitar-amp experience (fork of AmpSim3). See CREDITS.md.",
   "main": "server.js",
   "dependencies": {
     "express": "~4.13.4"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node src/presets/validate.js && node src/engine/checks/no-scriptprocessor.check.js && node src/engine/checks/no-dom-in-engine.check.js",
     "start": "node server.js"
   },
   "repository": {

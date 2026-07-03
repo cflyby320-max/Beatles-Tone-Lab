@@ -1,0 +1,244 @@
+/* Beatles Tone Lab — minimal vertical-slice UI. Theme-aware, era-tinted.
+   The full timeline + per-era themes arrive in a later milestone (PRD §5). */
+
+:root {
+  --bg: #f4f1ea;
+  --surface: #fffdf8;
+  --ink: #1c1a17;
+  --ink-soft: #5c574e;
+  --line: #d9d2c4;
+  --accent: #b5762f; /* 1969-70 rooftop warmth */
+  --accent-ink: #fff;
+  --error: #b3261e;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.06);
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #17150f;
+    --surface: #211d16;
+    --ink: #f2ede2;
+    --ink-soft: #b3aa98;
+    --line: #3a342a;
+    --accent: #e0a25a;
+    --accent-ink: #1c1408;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 4vw, 3rem) 1.25rem 4rem;
+}
+
+.app-header h1 {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  letter-spacing: -0.02em;
+  margin: 0 0 0.25rem;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.slice-note {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.1rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  vertical-align: middle;
+}
+
+/* --- preset card --- */
+.preset-card {
+  margin-top: 1.5rem;
+  padding: clamp(1.1rem, 3vw, 1.75rem);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--accent);
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.card-header .song {
+  margin: 0;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  letter-spacing: -0.01em;
+}
+
+.era-badge {
+  padding: 0.2rem 0.6rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.draft-badge {
+  padding: 0.2rem 0.55rem;
+  border: 1px dashed var(--accent);
+  color: var(--accent);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.gear-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 1rem 0;
+}
+
+.gear-chip {
+  padding: 0.3rem 0.65rem;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.chain-arrow {
+  color: var(--ink-soft);
+}
+
+.story {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+}
+
+/* --- controls --- */
+.controls {
+  margin-top: 1.5rem;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.knobs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.knob {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.knob label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.knob input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.knob-readout {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.listen {
+  display: flex;
+}
+
+.play-toggle {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: var(--shadow);
+  transition: transform 0.08s ease, filter 0.15s ease;
+}
+
+.play-toggle:hover {
+  filter: brightness(1.05);
+}
+
+.play-toggle:active {
+  transform: translateY(1px);
+}
+
+.play-toggle.playing {
+  background: color-mix(in srgb, var(--accent) 65%, #000);
+}
+
+.honest-limit {
+  margin-top: 1.5rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--line);
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+  border-radius: 0 8px 8px 0;
+}
+
+.fatal {
+  color: var(--error);
+  font-weight: 600;
+}
+
+/* --- status bar --- */
+.status-bar {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-error {
+  color: var(--error);
+  font-weight: 600;
+}

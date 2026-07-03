@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://beatles-tone-lab/preset.schema.json",
+  "title": "Beatles Tone Lab preset",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "song", "album", "year", "era", "status", "gear", "story", "voicing", "params", "exposedKnobs", "demoRiff"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "song": { "type": "string", "minLength": 1 },
+    "album": { "type": "string", "minLength": 1 },
+    "year": { "type": "integer", "minimum": 1960, "maximum": 1975 },
+    "era": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["draft", "verified"] },
+    "gear": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["guitar", "amp", "pedals"],
+      "properties": {
+        "guitar": { "type": "string" },
+        "amp": { "type": "string" },
+        "pedals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "story": { "type": "string", "minLength": 1 },
+    "voicing": { "type": "string", "enum": ["FENDER_BLACKFACE"] },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputGain", "gate", "pedals", "preamp", "tonestack", "powerAmp", "cabinet", "reverb", "master"],
+      "properties": {
+        "inputGain": { "type": "number", "minimum": 0, "maximum": 2 },
+        "gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["threshold"],
+          "properties": { "threshold": { "type": "number", "minimum": -100, "maximum": 0 } }
+        },
+        "pedals": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["compressor", "fuzz", "leslie", "slapEcho"],
+          "properties": {
+            "compressor": { "$ref": "#/definitions/pedal" },
+            "fuzz": { "$ref": "#/definitions/pedal" },
+            "leslie": { "$ref": "#/definitions/pedal" },
+            "slapEcho": { "$ref": "#/definitions/pedal" }
+          }
+        },
+        "preamp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["gain"],
+          "properties": { "gain": { "type": "number", "minimum": 0, "maximum": 1 } }
+        },
+        "tonestack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bass", "mid", "treble"],
+          "properties": {
+            "bass": { "type": "number", "minimum": 0, "maximum": 1 },
+            "mid": { "type": "number", "minimum": 0, "maximum": 1 },
+            "treble": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "powerAmp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["drive"],
+          "properties": { "drive": { "type": "number", "minimum": 0, "maximum": 1 } }
+        },
+        "cabinet": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ir"],
+          "properties": { "ir": { "type": "string", "minLength": 1 } }
+        },
+        "reverb": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ir", "mix"],
+          "properties": {
+            "ir": { "type": "string", "minLength": 1 },
+            "mix": { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "master": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "exposedKnobs": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    },
+    "demoRiff": { "type": "string", "minLength": 1 }
+  },
+  "definitions": {
+    "pedal": {
+      "type": "object",
+      "required": ["on"],
+      "properties": { "on": { "type": "boolean" } }
+    }
+  }
+}

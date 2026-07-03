@@ -22,19 +22,29 @@ every preset carries a year, a gear chain, and a short story note, not just a so
 
 ```bash
 npm install
-node server.js       # dev server on http://localhost:8084
-npm test              # preset schema validation + engine invariant guards
+npm test              # preset schema + engine invariant guards + Listen/Play controller tests
+
+# Serve the static site (the app is plain ES modules — it needs a static server, not file://):
+python3 -m http.server 8000      # then open http://localhost:8000
+#   or: npx serve .
 ```
 
-Open `http://localhost:8084` for the current vertical slice (one preset, Listen Mode).
-Open `http://localhost:8084/test/determinism.html` for the in-browser
-`OfflineAudioContext` determinism check (apply → mutate → re-apply must render
-bit-identical — see PRD Appendix A.3 for why the compressor is excluded from this test).
-The original, unmodified AmpSim3 app is preserved at
-`http://localhost:8084/legacy-ampsim3.html`.
+Open `http://localhost:8000/index.html` for the full app (all 6 presets, the era timeline,
+Listen Mode and Play Mode). Other pages:
+- `http://localhost:8000/test/determinism.html` — in-browser `OfflineAudioContext`
+  determinism check (apply → mutate → re-apply must render bit-identical; see PRD
+  Appendix A.3 for why the compressor is excluded).
+- `http://localhost:8000/test/listen-mode.html` — Listen Mode controller test in the browser.
+- `http://localhost:8000/legacy-ampsim3.html` — the original, unmodified AmpSim3 app,
+  preserved for reference.
 
-No build step yet (plain ES modules + vanilla CSS). Vite is planned from milestone M3
-onward, only if it simplifies the new UI — see the PRD §1.
+> **Note on `node server.js`:** the bundled legacy Express 4.13 dev server does not run on
+> modern Node (it crashes serving ES-module requests). Use a static server as above until
+> the owner approves a server/dependency upgrade — that is intentionally out of scope for now.
+
+No build step (plain ES modules + vanilla CSS); production is served straight from the
+repo root (see **Hosting** below). Vite was considered from M3 but not adopted — the
+vanilla-module UI shipped through M4 without needing a bundler.
 
 ## Stack
 
@@ -47,11 +57,13 @@ network requests beyond loading bundled audio/IR assets.
 
 | Mode | Input | Status |
 |---|---|---|
-| **Listen** | Bundled dry demo riff, looped through the live preset chain | Shipped (M1) |
-| **Play** | Live guitar via `getUserMedia` + external audio interface | Planned — desktop Chrome + interface is the target happy path |
+| **Listen** | Bundled dry demo riff, looped through the live preset chain | Shipped (M4) — all 6 presets, with pause/resume and lazy-loaded, cached buffers |
+| **Play** | Live guitar via `getUserMedia` + external audio interface | Shipped (M3/M4) — desktop Chrome + interface is the happy path; hidden on mobile |
 
 Listen Mode is not a fallback bolted on later — it's the primary shareable,
-zero-hardware experience (mobile, non-players, quick demos).
+zero-hardware experience (mobile, non-players, quick demos). Play and Listen are mutually
+exclusive: starting one stops the other, and Listen audio enters the shared engine at the
+noise gate (bypassing the live-interface input gain) per PRD §4.
 
 ## Preset system
 
@@ -63,8 +75,9 @@ preset. Presets carry `"status": "draft"` until tuned by ear against the real re
 (see `docs/tone-notes.md`) and flipped to `"verified"`.
 
 User tweaks to the exposed knobs persist to `localStorage`, layered on top of the preset
-JSON, so a reload doesn't lose your adjustments; there's no "reset to original" UI yet in
-this milestone.
+JSON, so a reload doesn't lose your adjustments. A **Reset to original** control clears all
+saved tweaks for a preset, and double-clicking a single knob resets just that one to its
+preset default.
 
 ## Assets & attribution
 

@@ -30,12 +30,26 @@ function saveTweak(presetId, path, value) {
   }
 }
 
-function clearTweaks(presetId) {
+export function clearTweaks(presetId) {
   try {
     localStorage.removeItem(keyFor(presetId));
   } catch (e) {
     /* ignore */
   }
+}
+
+function getDeep(obj, path) {
+  return path.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+}
+
+// Resolves a knob's displayed value for a preset that ISN'T the live engine
+// preset: saved tweak override if one exists, else the preset's own JSON
+// default. Never touches the engine — used to render inactive preset cards'
+// read-only knob readouts.
+export function resolveKnobValue(preset, path) {
+  const tweaks = loadTweaks(preset.id);
+  if (tweaks && Object.prototype.hasOwnProperty.call(tweaks, path)) return tweaks[path];
+  return getDeep(preset.params, path);
 }
 
 // Applies any saved tweaks for this preset on top of the already-applied

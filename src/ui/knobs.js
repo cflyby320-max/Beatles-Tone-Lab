@@ -4,12 +4,47 @@
 // the preset default; the "Reset to original" button (PRD §3.3) clears ALL
 // saved tweaks for this preset via resetToOriginal (localStorage persistence
 // lives in ui/tweakPersistence.js).
+//
+// M3: the native <input type="range"> stays the control (its keyboard/ARIA/drag
+// behavior is free and correct) — css/slice.css restyles it as a vertical
+// fader-style knob via the standard `writing-mode: vertical-lr` + orient
+// technique. `renderStaticKnobs` below renders the same 4 values as read-only
+// for a preset card that isn't the live engine preset (PRD §5.1 grid).
+import { resolveKnobValue } from './tweakPersistence.js';
+
 const KNOB_LABELS = {
   'preamp.gain': 'Gain',
   'tonestack.treble': 'Tone',
   'reverb.mix': 'Reverb',
   'master': 'Master',
 };
+
+const formatKnobValue = (v) => (Number(v) * 10).toFixed(1);
+
+// Read-only knob readouts for a preset card that is not the active engine
+// preset. Shows the tweak-override-or-default value (never touches engine).
+export function renderStaticKnobs(container, preset) {
+  container.innerHTML = '';
+  preset.exposedKnobs.forEach((path) => {
+    const label = KNOB_LABELS[path] || path;
+    const value = Number(resolveKnobValue(preset, path));
+
+    const wrap = document.createElement('div');
+    wrap.className = 'knob knob-static';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'knob-label';
+    labelEl.textContent = label;
+
+    const readout = document.createElement('span');
+    readout.className = 'knob-readout';
+    readout.textContent = formatKnobValue(value);
+
+    wrap.appendChild(labelEl);
+    wrap.appendChild(readout);
+    container.appendChild(wrap);
+  });
+}
 
 export function initKnobs(container, engine, preset, resetToOriginal) {
   container.innerHTML = '';
@@ -26,6 +61,7 @@ export function initKnobs(container, engine, preset, resetToOriginal) {
 
     const id = 'knob-' + path.replace(/\./g, '-');
     const labelEl = document.createElement('label');
+    labelEl.className = 'knob-label';
     labelEl.htmlFor = id;
     labelEl.textContent = label;
 
@@ -41,7 +77,7 @@ export function initKnobs(container, engine, preset, resetToOriginal) {
     slider.value = String(initial);
     slider.setAttribute('aria-label', label);
 
-    const format = (v) => (Number(v) * 10).toFixed(1);
+    const format = formatKnobValue;
     readout.value = format(initial);
 
     slider.addEventListener('input', () => {

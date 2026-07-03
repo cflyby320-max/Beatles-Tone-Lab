@@ -5,6 +5,7 @@
   "assets": {
     "directory": "."
   },
+  "workers_dev": true,
   "observability": {
     "enabled": true
   }

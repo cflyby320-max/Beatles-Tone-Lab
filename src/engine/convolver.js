@@ -18,6 +18,15 @@ export function createConvolver(context, impulses, emitter, label) {
 
   const IRs = impulses;
   let currentImpulse = IRs[0];
+  // Tracks the most recently triggered load, whether still in flight or
+  // already settled. loadImpulseByName() is fire-and-forget from a voicing's
+  // apply() (it must stay synchronous), so anything that needs the graph to be
+  // fully settled before proceeding — e.g. an offline render right after
+  // switching presets to a different cabinet IR — must await whenSettled()
+  // first. Without this, rendering could start before the new IR's
+  // fetch+decode finishes, which is a real, timing-dependent source of
+  // non-determinism (caught by test/determinism.html's cross-preset check).
+  let pending;
 
   // dry route
   inputGain.connect(directGain);
@@ -34,7 +43,7 @@ export function createConvolver(context, impulses, emitter, label) {
   const ready = loadImpulseByUrl(currentImpulse.url);
 
   function loadImpulseByUrl(url) {
-    return loadSample(context, url)
+    const promise = loadSample(context, url)
       .then((buffer) => {
         convolverNode.buffer = buffer;
         if (emitter) emitter.emit('ir-loaded', { label, name: currentImpulse.name, url });
@@ -44,6 +53,8 @@ export function createConvolver(context, impulses, emitter, label) {
         if (emitter) emitter.emit('ir-error', { label, url, error: err });
         else console.error('IR load failed (' + label + '):', url, err);
       });
+    pending = promise;
+    return promise;
   }
 
   function loadImpulseByName(name) {
@@ -55,6 +66,10 @@ export function createConvolver(context, impulses, emitter, label) {
     }
     currentImpulse = match;
     return loadImpulseByUrl(match.url);
+  }
+
+  function whenSettled() {
+    return pending;
   }
 
   // Equal-power crossfade between dry and wet. value in [0, 1].
@@ -75,5 +90,6 @@ export function createConvolver(context, impulses, emitter, label) {
     setGain,
     getName,
     loadImpulseByName,
+    whenSettled,
   };
 }

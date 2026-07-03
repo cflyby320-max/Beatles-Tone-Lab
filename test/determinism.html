@@ -5,27 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Beatles Tone Lab — determinism test</title>
     <style>
-      body { font-family: ui-monospace, monospace; max-width: 680px; margin: 2rem auto; padding: 0 1rem; }
+      body { font-family: ui-monospace, monospace; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
       #result { font-size: 1.4rem; font-weight: 700; padding: 1rem; border-radius: 10px; }
       .pass { background: #e6f4ea; color: #137333; }
       .fail { background: #fce8e6; color: #b3261e; }
-      pre { background: #f5f5f5; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+      pre { background: #f5f5f5; padding: 1rem; border-radius: 8px; overflow-x: auto; white-space: pre-wrap; }
     </style>
   </head>
   <body>
-    <h1>Preset determinism (PRD §8.2)</h1>
+    <h1>Preset determinism (PRD §7 M2, §8.2)</h1>
     <p>
-      Renders the Get Back preset twice through an <code>OfflineAudioContext</code>. The second render
-      mutates knobs, then re-applies the preset before rendering — so if <code>applyPreset()</code> is
-      exhaustive (no state leaks in from the mutation), the two waveforms must be identical.
+      Two checks, each rendered through an <code>OfflineAudioContext</code>:
     </p>
-    <p><em>Notes:</em> the noise gate is held open during offline rendering (no requestAnimationFrame).
-      The compressor pedal is forced OFF for this test because Chromium's <code>DynamicsCompressorNode</code>
-      is itself non-deterministic in <code>OfflineAudioContext</code> (it differs between two identical
-      renders) — testing it would test the browser, not our engine. Everything else in the chain
-      (preamp waveshapers, tonestack filters, power-amp soft clip, gains, IR mix) renders bit-identically,
-      so this validates the real target: that mutating knobs and re-applying the preset fully restores the
-      graph with zero state leakage.</p>
+    <ol>
+      <li><strong>Per-preset restore.</strong> For every one of the 6 launch presets: apply it, render; then on a
+        fresh engine apply it, mutate its 4 exposed knobs, re-apply it, and render again. If
+        <code>applyPreset()</code> is exhaustive, the two waveforms must be identical.</li>
+      <li><strong>Cross-preset switching.</strong> Apply all 6 presets in sequence on ONE engine, ending back on
+        the first preset, then render. Compare against a fresh engine that only ever applied that first preset.
+        This is the multi-voicing, multi-pedal version of the leakage check above — it's what M2's "switching
+        among all 6 presets is ... fully deterministic" acceptance criterion actually exercises.</li>
+    </ol>
+    <p><em>Notes:</em> the noise gate is held open during offline rendering (no requestAnimationFrame). The
+      compressor pedal is forced OFF for every render because Chromium's <code>DynamicsCompressorNode</code> is
+      itself non-deterministic in <code>OfflineAudioContext</code> (it differs between two identical renders) —
+      testing it would test the browser, not our engine. Everything else in the chain (preamp waveshapers,
+      tonestack filters, power-amp soft clip, pedal DSP incl. fuzz/leslie, gains, IR mix) renders bit-identically.</p>
     <div id="result">running…</div>
     <pre id="detail"></pre>
 
@@ -35,6 +40,16 @@
 
       const SR = 44100;
       const DURATION = 1.0;
+      const THRESHOLD = 1e-6;
+
+      const PRESET_FILES = [
+        'get-back-1969.json',
+        'i-saw-her-standing-there-1963.json',
+        'a-hard-days-night-1964.json',
+        'taxman-1966.json',
+        'lucy-in-the-sky-1967.json',
+        'helter-skelter-1968.json',
+      ];
 
       function makeToneBuffer(ctx) {
         const len = Math.floor(SR * DURATION);
@@ -47,24 +62,20 @@
         return buf;
       }
 
-      async function render(basePreset, mutateThenRestore) {
-        // Force the compressor off: DynamicsCompressorNode is non-deterministic
-        // offline (see notes above). Everything else is deterministic.
+      function withCompressorOff(basePreset) {
         const preset = JSON.parse(JSON.stringify(basePreset));
         preset.params.pedals.compressor.on = false;
+        return preset;
+      }
 
+      async function newReadyEngine() {
         const ctx = new OfflineAudioContext(1, Math.floor(SR * DURATION), SR);
         const engine = new Engine(ctx, { cabinetImpulses, reverbImpulses });
-        // wait for IRs so both renders share an identical (fully-loaded) graph
-        await engine.whenReady();
-        engine.applyPreset(preset);
-        if (mutateThenRestore) {
-          engine.setKnob('preamp.gain', 0.99);
-          engine.setKnob('tonestack.treble', 0.05);
-          engine.setKnob('reverb.mix', 0.9);
-          engine.setKnob('master', 0.2);
-          engine.applyPreset(preset); // restore — must fully reset
-        }
+        await engine.whenReady(); // both renders must share an identical, fully-loaded graph
+        return { ctx, engine };
+      }
+
+      async function finishRender(ctx, engine) {
         const src = ctx.createBufferSource();
         src.buffer = makeToneBuffer(ctx);
         src.connect(engine.input);
@@ -73,35 +84,95 @@
         return rendered.getChannelData(0);
       }
 
+      // Check 1: apply -> render vs apply -> mutate knobs -> re-apply -> render.
+      // Every applyPreset()/setKnob() call is awaited: both return a promise
+      // that resolves once any cabinet/reverb IR switch they triggered has
+      // finished loading+decoding (Engine.applyPreset/setKnob, signalChain.js
+      // whenIRsSettled) — skipping that await would let rendering start before
+      // a newly-switched IR (e.g. a preset using "vox-cab-01") is ready, which
+      // is a real, timing-dependent source of non-determinism.
+      async function renderPerPresetRestore(basePreset, mutateThenRestore) {
+        const preset = withCompressorOff(basePreset);
+        const { ctx, engine } = await newReadyEngine();
+        await engine.applyPreset(preset);
+        if (mutateThenRestore) {
+          for (let i = 0; i < preset.exposedKnobs.length; i++) {
+            // deterministic, arbitrary-but-different mutation per knob
+            await engine.setKnob(preset.exposedKnobs[i], (i % 2 === 0) ? 0.97 : 0.04);
+          }
+          await engine.applyPreset(preset); // restore — must fully reset
+        }
+        return finishRender(ctx, engine);
+      }
+
+      // Check 2: one engine applies every preset in order, ending back on
+      // presets[0], vs a fresh engine that only ever applied presets[0].
+      async function renderAfterSwitchingThroughAll(presets) {
+        const { ctx, engine } = await newReadyEngine();
+        const sequence = presets.concat([presets[0]]); // visit every voicing, then return to the first
+        for (const p of sequence) {
+          await engine.applyPreset(withCompressorOff(p));
+        }
+        return finishRender(ctx, engine);
+      }
+
+      async function renderAlone(preset) {
+        const { ctx, engine } = await newReadyEngine();
+        await engine.applyPreset(withCompressorOff(preset));
+        return finishRender(ctx, engine);
+      }
+
+      function compare(a, b) {
+        let maxDiff = 0;
+        let hasNaN = false;
+        for (let i = 0; i < a.length; i++) {
+          if (!Number.isFinite(a[i]) || !Number.isFinite(b[i])) hasNaN = true;
+          const d = Math.abs(a[i] - b[i]);
+          if (d > maxDiff) maxDiff = d;
+        }
+        return { maxDiff, hasNaN, pass: !hasNaN && maxDiff < THRESHOLD };
+      }
+
       (async () => {
         const resultEl = document.getElementById('result');
         const detailEl = document.getElementById('detail');
-        try {
-          const preset = await (await fetch('../src/presets/get-back-1969.json')).json();
-          const a = await render(preset, false);
-          const b = await render(preset, true);
+        const lines = [];
+        let allPass = true;
 
-          let maxDiff = 0;
-          let hasNaN = false;
-          for (let i = 0; i < a.length; i++) {
-            if (!Number.isFinite(a[i]) || !Number.isFinite(b[i])) hasNaN = true;
-            const d = Math.abs(a[i] - b[i]);
-            if (d > maxDiff) maxDiff = d;
+        try {
+          const presets = await Promise.all(
+            PRESET_FILES.map((f) => fetch('../src/presets/' + f).then((r) => r.json()))
+          );
+
+          for (let i = 0; i < presets.length; i++) {
+            const preset = presets[i];
+            const a = await renderPerPresetRestore(preset, false);
+            const b = await renderPerPresetRestore(preset, true);
+            const r = compare(a, b);
+            allPass = allPass && r.pass;
+            lines.push(
+              (r.pass ? '✓' : '✗') + ' restore   ' + preset.id +
+              '  maxDiff=' + r.maxDiff.toExponential(3) + (r.hasNaN ? '  NaN!' : '')
+            );
           }
 
-          const pass = !hasNaN && maxDiff < 1e-6;
-          resultEl.textContent = pass ? 'PASS ✓' : 'FAIL ✗';
-          resultEl.className = pass ? 'pass' : 'fail';
-          detailEl.textContent =
-            'samples compared : ' + a.length + '\n' +
-            'max |A - A\'|     : ' + maxDiff.toExponential(3) + '\n' +
-            'NaN/Infinity     : ' + hasNaN + '\n' +
-            'threshold        : 1e-6';
-          window.__determinism = { pass, maxDiff, hasNaN };
+          const alone = await renderAlone(presets[0]);
+          const afterSwitching = await renderAfterSwitchingThroughAll(presets);
+          const switchResult = compare(alone, afterSwitching);
+          allPass = allPass && switchResult.pass;
+          lines.push(
+            (switchResult.pass ? '✓' : '✗') + ' switching ' + presets[0].id + ' (after all 6)' +
+            '  maxDiff=' + switchResult.maxDiff.toExponential(3) + (switchResult.hasNaN ? '  NaN!' : '')
+          );
+
+          resultEl.textContent = allPass ? 'PASS ✓' : 'FAIL ✗';
+          resultEl.className = allPass ? 'pass' : 'fail';
+          detailEl.textContent = lines.join('\n') + '\n\nthreshold: ' + THRESHOLD;
+          window.__determinism = { pass: allPass, lines };
         } catch (e) {
           resultEl.textContent = 'ERROR ✗';
           resultEl.className = 'fail';
-          detailEl.textContent = String(e && e.stack ? e.stack : e);
+          detailEl.textContent = lines.join('\n') + '\n\n' + String(e && e.stack ? e.stack : e);
           window.__determinism = { pass: false, error: String(e) };
         }
       })();

@@ -1,0 +1,33 @@
+{
+  "id": "helter-skelter-1968",
+  "song": "Helter Skelter",
+  "album": "The Beatles (White Album)",
+  "year": 1968,
+  "era": "1968",
+  "status": "draft",
+  "gear": {
+    "guitar": "Humbucker-ish drive",
+    "amp": "Cranked stack voicing",
+    "pedals": ["Fuzz", "Drive stacked"]
+  },
+  "story": "The loud, chaotic, proto-metal outlier of the White Album — famously overdriven and pushed past clean on purpose. We approximate it with the PUSHED_STACK voicing (the base engine's cranked-stack curve) run hot, with the fuzz pedal stacked in front for extra saturation. Listen for the whole chain feeling like it is right at the edge of falling apart rather than a tidy, controlled distortion.",
+  "voicing": "PUSHED_STACK",
+  "params": {
+    "inputGain": 1.0,
+    "gate": { "threshold": -48 },
+    "pedals": {
+      "compressor": { "on": false },
+      "fuzz": { "on": true },
+      "leslie": { "on": false },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.75 },
+    "tonestack": { "bass": 0.45, "mid": 0.7, "treble": 0.6 },
+    "powerAmp": { "drive": 0.8 },
+    "cabinet": { "ir": "fender-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.05 },
+    "master": 0.75
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

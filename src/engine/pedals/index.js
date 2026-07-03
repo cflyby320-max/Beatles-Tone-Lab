@@ -1,10 +1,10 @@
 // PedalBoard — fixed slot order in v1 (PRD §2.2):
-//   input -> compressor -> fuzz(stub) -> leslie(stub) -> slapEcho -> output
+//   input -> compressor -> fuzz -> leslie -> slapEcho -> output
 // Each pedal exposes { input, output, setOn }. setState() applies a preset's
 // `params.pedals` block exhaustively so nothing leaks between presets.
 import { createCompressor } from './compressor.js';
-import { createFuzz } from './fuzz.stub.js';
-import { createLeslie } from './leslie.stub.js';
+import { createFuzz } from './fuzz.js';
+import { createLeslie } from './leslie.js';
 import { createSlapEcho } from './slapEcho.js';
 
 export function createPedalBoard(context) {

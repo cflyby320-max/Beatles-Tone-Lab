@@ -1,0 +1,33 @@
+{
+  "id": "a-hard-days-night-1964",
+  "song": "A Hard Day's Night",
+  "album": "A Hard Day's Night",
+  "year": 1964,
+  "era": "1962-64",
+  "status": "draft",
+  "gear": {
+    "guitar": "12-string character (EQ trick, not a real 12-string)",
+    "amp": "Vox AC30",
+    "pedals": ["Compressor", "Plate reverb"]
+  },
+  "story": "Built around that famous opening chord and the jangly rhythm bed underneath it. A real 12-string (George's Rickenbacker) is out of scope for v1, so we fake the character with brighter EQ and a touch more compression than the AC30 tones around it, plus a wetter plate reverb for studio sheen. Listen for the chime holding together evenly across a strummed chord rather than any one string poking out.",
+  "voicing": "VOX_TOPBOOST",
+  "params": {
+    "inputGain": 0.85,
+    "gate": { "threshold": -55 },
+    "pedals": {
+      "compressor": { "on": true },
+      "fuzz": { "on": false },
+      "leslie": { "on": false },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.4 },
+    "tonestack": { "bass": 0.5, "mid": 0.55, "treble": 0.78 },
+    "powerAmp": { "drive": 0.35 },
+    "cabinet": { "ir": "vox-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.18 },
+    "master": 0.8
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

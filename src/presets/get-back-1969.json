@@ -1,0 +1,33 @@
+{
+  "id": "get-back-1969",
+  "song": "Get Back",
+  "album": "Let It Be",
+  "year": 1969,
+  "era": "1969-70",
+  "status": "draft",
+  "gear": {
+    "guitar": "Epiphone Casino",
+    "amp": "Fender Twin/Showman, edge of breakup",
+    "pedals": []
+  },
+  "story": "On the rooftop, the Casinos ran hot and clean through Fender amps pushed to the very edge of breakup — warm, dynamic, and honest, with the pick attack doing the work. We approximate that with the FENDER_BLACKFACE voicing: high headroom, gently scooped mids, and only a whisper of soft clip when you dig in. Listen for how the chords bloom and compress slightly on the hardest strums rather than distorting.",
+  "voicing": "FENDER_BLACKFACE",
+  "params": {
+    "inputGain": 0.9,
+    "gate": { "threshold": -55 },
+    "pedals": {
+      "compressor": { "on": true },
+      "fuzz": { "on": false },
+      "leslie": { "on": false },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.42 },
+    "tonestack": { "bass": 0.55, "mid": 0.5, "treble": 0.62 },
+    "powerAmp": { "drive": 0.55 },
+    "cabinet": { "ir": "fender-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.12 },
+    "master": 0.8
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

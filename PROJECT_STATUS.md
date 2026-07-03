@@ -35,7 +35,7 @@ engine/UI/ship foundations (`beatles-tone-lab-02-technical-prd.md` §7).
 - `npm test` (preset schema validator + the two engine-invariant guards) is green.
 - Legacy AmpSim3 app preserved untouched at `legacy-ampsim3.html`; confirmed (not just
   assumed) during M2 that the new engine never reads its hardcoded preset array.
-- **M3 (new UI shell) is in progress** as a draft PR (`claude/m3-ui-shell`): era
+- **M3 (new UI shell) is in progress** as draft PR #6 (`claude/m3-ui-shell`): era
   timeline, filterable 6-card preset grid, extended status bar (input device
   picker + level meter + master volume), and vertical custom-styled keyboard/ARIA
   knobs. Not yet merged.
@@ -49,7 +49,7 @@ engine/UI/ship foundations (`beatles-tone-lab-02-technical-prd.md` §7).
 | M1 — One great preset (*Get Back*) | **Done** | Merged via PR #1. Headless engine refactor, `FENDER_BLACKFACE` voicing, preset schema + validator, Listen Mode, determinism test. Owner Grin Test still pending (owner-only). |
 | Project operating system | **Done** | Merged via PR #2 + #3. `AGENTS.md`, `PROJECT_STATUS.md`, `OWNER_MULTI_DEVICE_GUIDE.md`, UI design doc, ADRs, CI, PR template. |
 | M2 — Preset system + 6 tones | **Done** | Merged via PR #4. `VOX_TOPBOOST` + `PUSHED_STACK` voicings, fuzz + leslie pedal DSP, all 5 remaining preset JSONs (draft), localStorage tweak persistence + reset UI, `test/determinism.html` extended to cover all 6 presets + cross-preset switching (all bit-identical). |
-| M3 — New UI shell | **In review** | Draft PR open (`claude/m3-ui-shell`): 5-segment era timeline, all 6 presets as selectable cards (one live in the shared engine at a time, crossfaded ~80ms on switch per PRD §5.2; other cards show a read-only preview + a "Listen" button that promotes them), extended status bar (device picker, level meter, latency, volume), vertical custom-styled keyboard/ARIA knobs. `npm test` and `test/determinism.html` both green. Real Play Mode (getUserMedia) wired in alongside Listen Mode. Stayed on plain ES modules — no Vite introduced. |
+| M3 — New UI shell | **In review** | Draft PR #6 open (`claude/m3-ui-shell`): 5-segment era timeline, all 6 presets as selectable cards (one live in the shared engine at a time, crossfaded ~80ms on switch per PRD §5.2; other cards show a read-only preview + a "Listen" button that promotes them), extended status bar (device picker, level meter, latency, volume), vertical custom-styled keyboard/ARIA knobs. `npm test` and `test/determinism.html` both green. Real Play Mode (getUserMedia) wired in alongside Listen Mode. Stayed on plain ES modules — no Vite introduced. |
 | M4 — Listen Mode (full) | Queued | Currently only the *Get Back* preset has Listen Mode wired into the UI; extend to all 6, verify mobile Safari/Chrome. |
 | M5 — Ship | Later | Cloudflare Pages deploy, asset budget check, replace placeholder IR/riff (candidates identified in PR #5), Lighthouse pass. |
 
@@ -62,7 +62,7 @@ of a lane to one agent.
 
 | Lane | Owner | Task | Branch | Notes |
 |---|---|---|---|---|
-| Shared-core / integration | Claude | M3 — new UI shell | `claude/m3-ui-shell` | Draft PR open; touches `index.html`, `css/slice.css`, `src/main.js`, `src/engine/engine.js` (additive `crossfadeToPreset` only), `src/ui/*`. |
+| Shared-core / integration | Claude | M3 — new UI shell | `claude/m3-ui-shell` | Draft PR #6 open; touches `index.html`, `css/slice.css`, `src/main.js`, `src/engine/engine.js` (additive `crossfadeToPreset` only), `src/ui/*`. |
 | Isolated feature / docs | — | *(none active)* | — | IR/riff provenance research (last occupant) merged via PR #5. |
 
 ## Known blockers and owner decisions

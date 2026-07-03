@@ -65,5 +65,15 @@ export function createSignalChain(context, options) {
   // resolves once both convolvers' initial IRs are loaded (or have failed)
   const whenReady = Promise.all([cabinet.ready, reverb.ready]).then(() => undefined);
 
-  return { input, output, nodes, waveshapers, whenReady };
+  // resolves once any IR switch most recently triggered on either convolver
+  // (e.g. by applying a preset that names a different cabinet.ir/reverb.ir)
+  // has finished loading+decoding, or failed. Callers that need the graph
+  // fully settled before proceeding — offline renders in particular — must
+  // await this after applyPreset()/setKnob(), since loadImpulseByName() is
+  // fire-and-forget from inside a voicing's synchronous apply().
+  function whenIRsSettled() {
+    return Promise.all([cabinet.whenSettled(), reverb.whenSettled()]).then(() => undefined);
+  }
+
+  return { input, output, nodes, waveshapers, whenReady, whenIRsSettled };
 }

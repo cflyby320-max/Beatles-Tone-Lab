@@ -1,0 +1,33 @@
+{
+  "id": "lucy-in-the-sky-1967",
+  "song": "Lucy in the Sky with Diamonds",
+  "album": "Sgt. Pepper's Lonely Hearts Club Band",
+  "year": 1967,
+  "era": "1967",
+  "status": "draft",
+  "gear": {
+    "guitar": "Strat-ish single coil",
+    "amp": "Fender blackface",
+    "pedals": ["Leslie/vibrato sim", "Reverb"]
+  },
+  "story": "The psychedelic centerpiece of Pepper: a watery, rotating, dreamlike swirl over a clean Fender-style base. We approximate the rotating-speaker effect with the Leslie pedal (modulated delay pitch vibrato + amplitude tremolo + light stereo spread) on top of the FENDER_BLACKFACE voicing, with reverb pushed wetter than the other presets for that underwater feel. Listen for the slow pitch wobble and stereo width rather than any pick-attack transient.",
+  "voicing": "FENDER_BLACKFACE",
+  "params": {
+    "inputGain": 0.8,
+    "gate": { "threshold": -55 },
+    "pedals": {
+      "compressor": { "on": false },
+      "fuzz": { "on": false },
+      "leslie": { "on": true },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.4 },
+    "tonestack": { "bass": 0.5, "mid": 0.45, "treble": 0.55 },
+    "powerAmp": { "drive": 0.4 },
+    "cabinet": { "ir": "fender-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.28 },
+    "master": 0.8
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

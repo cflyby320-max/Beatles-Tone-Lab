@@ -81,6 +81,19 @@ later audio-change PR.
   an explicit redistribution license. They were rejected rather than inferred
   safe.
 
+**M2 addition — `vox-cab-01` placeholder alias.** `src/presets/irRegistry.js` registers
+a second IR name, `vox-cab-01`, used by all `VOX_TOPBOOST`-voiced presets (I Saw Her
+Standing There, A Hard Day's Night, Taxman). No dedicated Vox AC30 Blue-style cab IR has
+been sourced yet (PRD §2.4 calls for one); `vox-cab-01` currently points at the same
+`fender-cab-01.wav` file above. Kept as a distinct registry entry (not a literal
+`"fender-cab-01"` string in those presets' JSON) so preset intent stays honest once a
+real Vox IR is sourced — swapping the URL in `irRegistry.js` alone will fix all three
+presets. Same "UNCONFIRMED — verify before public deploy" caveat applies. Helter Skelter
+(`PUSHED_STACK` voicing) also reuses `fender-cab-01` directly pending a dedicated
+heavier-voiced cab IR — see `docs/tone-notes.md`. The candidate replacements above are
+research leads only (none yet downloaded/substituted); once the owner picks one, it
+should replace `fender-cab-01.wav` and this placeholder note both go away together.
+
 ## Demo riff (Listen Mode placeholder)
 
 | Ships as | Source file (from AmpSim3) |
@@ -111,6 +124,14 @@ self-recorded dry riff (PRD §4).
 No checkable grant of redistribution rights was found. The only approved
 replacement path remains an original, owner-recorded dry riff; no Beatles-owned
 or other non-free recording is proposed.
+
+**M2 addition.** The 5 new preset JSONs added in M2 (I Saw Her Standing There, A Hard
+Day's Night, Taxman, Lucy in the Sky, Helter Skelter) all point `demoRiff` at this same
+placeholder file, per the locked "placeholder riff = a reused dry DI take" decision
+(PRD Appendix A.5). Listen Mode itself is only wired up for one preset at a time in the
+current M2 UI (per-song Listen Mode across all 6 presets is M4 scope); this just keeps
+every preset's schema-required `demoRiff` field honest about being a placeholder until
+the owner records 6 real per-song riffs.
 
 ## Preset content
 

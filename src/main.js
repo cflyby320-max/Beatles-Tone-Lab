@@ -3,6 +3,7 @@ import { createAudioContext } from './engine/context.js';
 import { Engine } from './engine/engine.js';
 import { cabinetImpulses, reverbImpulses } from './presets/irRegistry.js';
 import { initApp } from './ui/app.js';
+import { attachTweakPersistence } from './ui/tweakPersistence.js';
 
 const PRESET_URL = 'src/presets/get-back-1969.json';
 
@@ -21,8 +22,11 @@ async function boot() {
   const context = createAudioContext();
   const engine = new Engine(context, { cabinetImpulses, reverbImpulses });
   engine.applyPreset(preset);
+  // Re-applies any locally-saved knob tweaks for this preset on top of the
+  // JSON defaults, then persists future knob moves (PRD §3.3).
+  const tweaks = attachTweakPersistence(engine, preset);
 
-  initApp({ engine, preset, context, root });
+  initApp({ engine, preset, context, root, resetToOriginal: tweaks.resetToOriginal });
 
   // expose for manual/headless debugging (Play-Mode wiring comes in a later milestone)
   window.__btl = { engine, context, preset };

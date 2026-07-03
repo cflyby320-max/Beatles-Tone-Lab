@@ -1,0 +1,33 @@
+{
+  "id": "i-saw-her-standing-there-1963",
+  "song": "I Saw Her Standing There",
+  "album": "Please Please Me",
+  "year": 1963,
+  "era": "1962-64",
+  "status": "draft",
+  "gear": {
+    "guitar": "Gretsch/Rickenbacker-bright single-coil hybrid",
+    "amp": "Vox AC30 Top Boost",
+    "pedals": ["Light compressor"]
+  },
+  "story": "Early Beatlemania: bright, bouncy, slightly hairy clean chime cut live in a few takes. We approximate the guitar-and-amp combo (rather than modeling one specific guitar) with the VOX_TOPBOOST voicing pushed just into its earliest breakup, plus a light compressor to even out pick attack. Listen for how the top end sparkles and bounces rather than sounding smooth or scooped.",
+  "voicing": "VOX_TOPBOOST",
+  "params": {
+    "inputGain": 0.85,
+    "gate": { "threshold": -55 },
+    "pedals": {
+      "compressor": { "on": true },
+      "fuzz": { "on": false },
+      "leslie": { "on": false },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.35 },
+    "tonestack": { "bass": 0.45, "mid": 0.5, "treble": 0.72 },
+    "powerAmp": { "drive": 0.35 },
+    "cabinet": { "ir": "vox-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.08 },
+    "master": 0.8
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

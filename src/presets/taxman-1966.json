@@ -1,0 +1,33 @@
+{
+  "id": "taxman-1966",
+  "song": "Taxman",
+  "album": "Revolver",
+  "year": 1966,
+  "era": "1965-66",
+  "status": "draft",
+  "gear": {
+    "guitar": "Epiphone Casino / P90-flavor",
+    "amp": "Vox AC30, pushed",
+    "pedals": ["Tone Bender-style fuzz"]
+  },
+  "story": "That biting, aggressive fuzz solo (famously played by McCartney, not Harrison) rides a pushed Vox AC30 with a tight low end so the midrange bite cuts through. We approximate it with VOX_TOPBOOST driven harder than the clean-era presets, plus the fuzz pedal in the signal path ahead of the amp. Listen for the fuzz staying tight and midrange-forward rather than washing out into a fat, bass-heavy blur.",
+  "voicing": "VOX_TOPBOOST",
+  "params": {
+    "inputGain": 0.95,
+    "gate": { "threshold": -50 },
+    "pedals": {
+      "compressor": { "on": false },
+      "fuzz": { "on": true },
+      "leslie": { "on": false },
+      "slapEcho": { "on": false }
+    },
+    "preamp": { "gain": 0.55 },
+    "tonestack": { "bass": 0.35, "mid": 0.65, "treble": 0.6 },
+    "powerAmp": { "drive": 0.6 },
+    "cabinet": { "ir": "vox-cab-01" },
+    "reverb": { "ir": "plate-01", "mix": 0.06 },
+    "master": 0.8
+  },
+  "exposedKnobs": ["preamp.gain", "tonestack.treble", "reverb.mix", "master"],
+  "demoRiff": "public/riffs/get-back-riff.mp3"
+}

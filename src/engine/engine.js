@@ -57,7 +57,11 @@ export class Engine {
   }
 
   // Applies a preset fully and deterministically: every param is set, so no
-  // state leaks in from a previously-loaded preset.
+  // state leaks in from a previously-loaded preset. Returns a promise that
+  // resolves once any cabinet/reverb IR switch this triggered has finished
+  // loading+decoding — callers that need a fully settled graph before
+  // proceeding (offline renders in particular) should await it; UI callers
+  // that just want the knobs to move can ignore the return value.
   applyPreset(preset) {
     const voicing = voicings[preset.voicing];
     if (!voicing) throw new Error('Unknown voicing: ' + preset.voicing);
@@ -69,16 +73,18 @@ export class Engine {
       preset,
       exposed: this.getExposedKnobValues(),
     });
+    return this.chain.whenIRsSettled();
   }
 
   // Sets one underlying param (an exposedKnobs path) and re-applies the voicing.
   // Re-applying everything is cheap and guarantees the graph stays consistent.
+  // Returns the same IR-settling promise as applyPreset(), for the same reason.
   setKnob(path, value) {
     if (!this.currentParams) throw new Error('setKnob before applyPreset');
     setDeep(this.currentParams, path, value);
     this.voicing.apply(this.chain, this.currentParams);
     this.emitter.emit('knob', { path, value });
-    return value;
+    return this.chain.whenIRsSettled();
   }
 
   getKnob(path) {

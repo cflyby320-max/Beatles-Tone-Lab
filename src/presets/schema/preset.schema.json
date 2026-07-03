@@ -23,7 +23,7 @@
       }
     },
     "story": { "type": "string", "minLength": 1 },
-    "voicing": { "type": "string", "enum": ["FENDER_BLACKFACE"] },
+    "voicing": { "type": "string", "enum": ["FENDER_BLACKFACE", "VOX_TOPBOOST", "PUSHED_STACK"] },
     "params": {
       "type": "object",
       "additionalProperties": false,

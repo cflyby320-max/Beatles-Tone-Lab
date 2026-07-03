@@ -1,7 +1,9 @@
 // The 4 exposed knobs (PRD §5.1/§7): Gain / Tone / Reverb / Master. Each is a
 // keyboard-accessible range input bound straight to engine.setKnob(path). The UI
-// owns the DOM; the engine stays headless. Double-click resets to the preset
-// default.
+// owns the DOM; the engine stays headless. Double-click resets a single knob to
+// the preset default; the "Reset to original" button (PRD §3.3) clears ALL
+// saved tweaks for this preset via resetToOriginal (localStorage persistence
+// lives in ui/tweakPersistence.js).
 const KNOB_LABELS = {
   'preamp.gain': 'Gain',
   'tonestack.treble': 'Tone',
@@ -9,9 +11,10 @@ const KNOB_LABELS = {
   'master': 'Master',
 };
 
-export function initKnobs(container, engine, preset) {
+export function initKnobs(container, engine, preset, resetToOriginal) {
   container.innerHTML = '';
   const defaults = {};
+  const controls = [];
 
   preset.exposedKnobs.forEach((path) => {
     const label = KNOB_LABELS[path] || path;
@@ -59,5 +62,30 @@ export function initKnobs(container, engine, preset) {
     wrap.appendChild(slider);
     wrap.appendChild(readout);
     container.appendChild(wrap);
+
+    controls.push({ path, slider, readout, format });
   });
+
+  if (typeof resetToOriginal === 'function') {
+    const resetWrap = document.createElement('div');
+    resetWrap.className = 'knob-reset';
+
+    const resetButton = document.createElement('button');
+    resetButton.type = 'button';
+    resetButton.className = 'reset-button';
+    resetButton.textContent = 'Reset to original';
+
+    resetButton.addEventListener('click', () => {
+      resetToOriginal();
+      // Re-sync every slider/readout to the (now-restored) engine state.
+      controls.forEach(({ path, slider, readout, format }) => {
+        const v = Number(engine.getKnob(path));
+        slider.value = String(v);
+        readout.value = format(v);
+      });
+    });
+
+    resetWrap.appendChild(resetButton);
+    container.appendChild(resetWrap);
+  }
 }

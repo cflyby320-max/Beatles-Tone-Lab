@@ -10,7 +10,8 @@ import { attachTweakPersistence } from './ui/tweakPersistence.js';
 import { initTimeline } from './ui/timeline.js';
 import { initPresetGrid } from './ui/presetGrid.js';
 import { initStatusBar } from './ui/statusBar.js';
-import { createPlayMode } from './ui/playMode.js';
+import { createPlayMode, isMobile } from './ui/playMode.js';
+import { createListenMode } from './ui/listenMode.js';
 
 const PRESET_FILES = [
   'i-saw-her-standing-there-1963.json',
@@ -68,31 +69,52 @@ async function boot() {
   engine.input.connect(analyser);
 
   const playMode = createPlayMode(context, engine.input);
+  const mobile = isMobile();
 
   const statusBar = initStatusBar(root.querySelector('#status-bar'), engine, context, {
     playMode,
     monitorGain,
     analyser,
+    mobile,
   });
 
+  let activationQueue = Promise.resolve();
   async function activatePreset(preset) {
-    if (preset.id === activePresetId) return;
-    tweaks.stopListening();
-    await engine.crossfadeToPreset(preset, 80);
-    tweaks = attachTweakPersistence(engine, preset);
-    activePresetId = preset.id;
+    activationQueue = activationQueue
+      .catch(() => {})
+      .then(async () => {
+        if (preset.id === activePresetId) return;
+        tweaks.stopListening();
+        await engine.crossfadeToPreset(preset, 80);
+        tweaks = attachTweakPersistence(engine, preset);
+        activePresetId = preset.id;
+      });
+    return activationQueue;
   }
 
-  const grid = initPresetGrid(root.querySelector('#preset-grid'), {
+  let grid;
+  const listenMode = createListenMode(context, engine.input, {
+    preparePreset: activatePreset,
+    stopPlayMode: () => playMode.stop(),
+    onStateChange: (state) => {
+      if (state.status === 'loading') statusBar.clearError('play');
+      if (grid) grid.refresh();
+    },
+    onError: (message) => statusBar.showError(message, 'riff'),
+    onClearError: () => statusBar.clearError('riff'),
+  });
+
+  grid = initPresetGrid(root.querySelector('#preset-grid'), {
     presets,
     engine,
     context,
     playMode,
+    listenMode,
+    mobile,
     getSelectedDeviceId: statusBar.getSelectedDeviceId,
-    activate: activatePreset,
     getActivePresetId: () => activePresetId,
     getResetToOriginal: () => tweaks.resetToOriginal,
-    onError: statusBar.showError,
+    onError: (message) => statusBar.showError(message, 'play'),
     initialEra: initialPreset.era,
   });
 
@@ -103,7 +125,7 @@ async function boot() {
   });
 
   // expose for manual/headless debugging
-  window.__btl = { engine, context, presets, activatePreset };
+  window.__btl = { engine, context, presets, activatePreset, listenMode, playMode };
 }
 
 if (document.readyState === 'loading') {

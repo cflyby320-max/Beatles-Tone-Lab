@@ -3,7 +3,14 @@
 // falls back gracefully to Listen Mode (never a broken/blank control). Mobile
 // hides the Play control entirely (PRD §4: "Mobile: Play Mode toggle hidden").
 export function isMobile() {
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const mobileUserAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  const coarsePointer =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  const compactViewport =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(max-width: 700px)').matches;
+  return mobileUserAgent || coarsePointer || compactViewport;
 }
 
 export function createPlayMode(context, destinationNode) {

@@ -5,10 +5,11 @@ import { clamp } from '../engine/utils/clamp.js';
 
 export function initStatusBar(container, engine, context, extras) {
   const { playMode, monitorGain, analyser } = extras || {};
+  const mobile = !!(extras && extras.mobile);
 
   container.innerHTML =
     '<div class="status-row status-row-controls">' +
-    '<label class="status-field" for="stat-device">' +
+    '<label class="status-field status-device-field" for="stat-device">' +
     '<span class="status-label">Input</span>' +
     '<select id="stat-device" class="device-select"></select>' +
     '</label>' +
@@ -35,6 +36,7 @@ export function initStatusBar(container, engine, context, extras) {
   const deviceSelect = container.querySelector('#stat-device');
   const volumeSlider = container.querySelector('#stat-volume');
   const levelFill = container.querySelector('#stat-level .level-meter-fill');
+  const deviceField = container.querySelector('.status-device-field');
 
   function refresh() {
     stateEl.textContent = 'audio: ' + context.state;
@@ -43,13 +45,26 @@ export function initStatusBar(container, engine, context, extras) {
     latencyEl.textContent = ms != null ? 'latency: ' + ms.toFixed(1) + ' ms' : 'latency: —';
   }
 
-  function showError(msg) {
-    errorEl.textContent = '⚠ ' + msg;
-    errorEl.hidden = false;
+  const errors = new Map();
+
+  function renderError() {
+    const messages = Array.from(errors.values());
+    errorEl.textContent = messages.length ? '⚠ ' + messages[messages.length - 1] : '';
+    errorEl.hidden = messages.length === 0;
+  }
+
+  function showError(msg, source = 'general') {
+    errors.set(source, msg);
+    renderError();
+  }
+
+  function clearError(source = 'general') {
+    errors.delete(source);
+    renderError();
   }
 
   engine.on('ir-error', (e) => {
-    showError('IR load failed (' + e.label + '): ' + e.url);
+    showError('IR load failed (' + e.label + '): ' + e.url, 'ir-' + e.label);
   });
 
   if (typeof context.addEventListener === 'function') {
@@ -94,8 +109,17 @@ export function initStatusBar(container, engine, context, extras) {
     }
   }
 
-  populateDevices();
-  if (navigator.mediaDevices && typeof navigator.mediaDevices.addEventListener === 'function') {
+  if (mobile) {
+    deviceField.hidden = true;
+    deviceSelect.disabled = true;
+  } else {
+    populateDevices();
+  }
+  if (
+    !mobile &&
+    navigator.mediaDevices &&
+    typeof navigator.mediaDevices.addEventListener === 'function'
+  ) {
     // Device labels only populate fully once mic permission is granted;
     // 'devicechange' fires again after that (and on real device changes).
     navigator.mediaDevices.addEventListener('devicechange', populateDevices);
@@ -136,6 +160,7 @@ export function initStatusBar(container, engine, context, extras) {
   return {
     refresh,
     showError,
+    clearError,
     getSelectedDeviceId: () => (deviceSelect && deviceSelect.value) || undefined,
   };
 }

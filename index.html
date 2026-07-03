@@ -10,22 +10,21 @@
   </head>
   <body>
     <main id="app" class="era-1969-70">
-      <header class="app-header">
-        <h1>Beatles Tone Lab</h1>
-        <p class="tagline">A tone museum you can play through. <span class="slice-note">Vertical slice · 1 preset · Listen Mode</span></p>
-      </header>
+      <div class="page">
+        <header class="app-header">
+          <h1>Beatles Tone Lab</h1>
+          <p class="tagline">A tone museum you can play through.</p>
+        </header>
 
-      <section id="preset-card" class="preset-card" aria-live="polite"></section>
+        <nav id="timeline" class="timeline"></nav>
 
-      <section class="controls">
-        <div id="knobs" class="knobs" aria-label="Tone controls"></div>
-        <div id="listen" class="listen"></div>
-      </section>
+        <section id="preset-grid" class="preset-grid" aria-live="polite"></section>
 
-      <p class="honest-limit">
-        Play Mode (live guitar) needs desktop Chrome + an audio interface and arrives in a later milestone.
-        This slice runs Listen Mode with a placeholder dry riff — no hardware needed.
-      </p>
+        <p class="honest-limit">
+          Play Mode (live guitar) needs desktop Chrome + an audio interface. Listen Mode
+          works everywhere with a bundled dry riff — no hardware needed.
+        </p>
+      </div>
 
       <footer id="status-bar" class="status-bar" aria-label="Status"></footer>
     </main>

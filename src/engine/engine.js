@@ -94,4 +94,37 @@ export class Engine {
   getExposedKnobValues() {
     return this.exposedKnobs.map((path) => ({ path, value: getDeep(this.currentParams, path) }));
   }
+
+  // Switches to a different preset without an audible pop (PRD §5.2: crossfade
+  // master over ~80ms). Ramps master gain down to near-silence, applies the new
+  // preset (which sets master.gain.value directly — inaudible while ganged to
+  // ~0), then ramps back up to the new preset's master value. Pure Web Audio
+  // param automation + a timer; applyPreset() itself is untouched and stays the
+  // exhaustive, deterministic call the determinism test drives directly.
+  crossfadeToPreset(preset, ms = 80) {
+    const gainParam = this.chain.nodes.master.gain;
+    const ctx = this.context;
+    const now = ctx.currentTime;
+    const half = Math.max(ms, 2) / 1000 / 2;
+    const floor = 0.0001;
+
+    gainParam.cancelScheduledValues(now);
+    gainParam.setValueAtTime(Math.max(gainParam.value, floor), now);
+    gainParam.linearRampToValueAtTime(floor, now + half);
+
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        this.applyPreset(preset)
+          .then(() => {
+            const afterNow = ctx.currentTime;
+            const target = Math.max(gainParam.value, floor);
+            gainParam.cancelScheduledValues(afterNow);
+            gainParam.setValueAtTime(floor, afterNow);
+            gainParam.linearRampToValueAtTime(target, afterNow + half);
+            resolve();
+          })
+          .catch(reject);
+      }, half * 1000);
+    });
+  }
 }

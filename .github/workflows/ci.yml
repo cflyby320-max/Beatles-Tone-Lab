@@ -1,0 +1,22 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm test
+
+  # Browser determinism check (test/determinism.html) is documented as a
+  # follow-up: it needs a headless Chromium + a static file server running
+  # concurrently. Add it here once a stable headless-runner pattern is chosen
+  # (see AGENTS.md §9 and beatles-tone-lab-02-technical-prd.md Appendix A.3).
